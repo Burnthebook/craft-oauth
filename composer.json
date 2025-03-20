@@ -1,0 +1,61 @@
+{
+  "name": "burnthebook/craft-oauth",
+  "description": "Adds OAuth Functionality to Craft CMS",
+  "type": "craft-plugin",
+  "version": "0.0.1",
+  "keywords": [
+    "craft",
+    "cms",
+    "craftcms",
+    "craft-plugin"
+  ],
+  "license": "proprietary",
+  "support": {
+    "email": "support@burnthebook.co.uk",
+    "issues": "https://github.com/burnthebook/craft-oauth/issues?state=open",
+    "source": "https://github.com/burnthebook/craft-oauth",
+    "docs": "https://github.com/burnthebook/craft-oauth",
+    "rss": "https://github.com/burnthebook/craft-oauth/releases.atom"
+  },
+  "require": {
+    "php": ">=8.2",
+    "craftcms/cms": "^5.6.0",
+    "league/oauth2-client": "^2.8",
+    "league/oauth2-facebook": "^2.2",
+    "league/oauth2-github": "^3.1",
+    "league/oauth2-google": "^4.0",
+    "league/oauth2-instagram": "^3.1",
+    "league/oauth2-linkedin": "^5.1"
+  },
+  "require-dev": {
+    "craftcms/ecs": "dev-main",
+    "craftcms/phpstan": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "burnthebook\\craftoauth\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "craft-oauth",
+    "name": "OAuth for Craft CMS",
+    "developer": "Burnthebook",
+    "documentationUrl": "https://github.com/burnthebook/craft-oauth",
+    "class": "burnthebook\\craftoauth\\OAuth"
+  },
+  "scripts": {
+    "check-cs": "ecs check --ansi",
+    "fix-cs": "ecs check --ansi --fix",
+    "phpstan": "phpstan --memory-limit=1G"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}

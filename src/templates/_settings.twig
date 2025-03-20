@@ -1,0 +1,143 @@
+{% import '_includes/forms.twig' as forms %}
+
+<h2>OAuth Providers</h2>
+
+{{ forms.editableTableField({
+    label: 'Providers',
+    name: 'providers',
+    instructions: 'Add OAuth providers with client credentials. Choose "Custom" to specify your own URLs.',
+    id: 'providers',
+    cols: {
+        provider: {
+            heading: 'Provider',
+            type: 'select',
+            options: [
+                { label: 'Google', value: 'google' },
+                { label: 'GitHub', value: 'github' },
+                { label: 'Facebook', value: 'facebook' },
+                { label: 'Instagram', value: 'instagram' },
+                { label: 'LinkedIn', value: 'linkedin' },
+                { label: 'Custom', value: 'custom' }
+            ],
+            required: true
+        },
+        handle: { heading: 'Handle', type: 'singleline', required: true },
+        clientId: { heading: 'Client ID', type: 'singleline', required: true },
+        clientSecret: { heading: 'Client Secret', type: 'singleline', required: true },
+        scopes: { heading: 'Scopes (comma-separated)', type: 'singleline' },
+        authUrl: { heading: 'Auth URL', type: 'singleline' },
+        tokenUrl: { heading: 'Token URL', type: 'singleline' },
+        userInfoUrl: { heading: 'User Info URL', type: 'singleline' },
+    },
+    rows: settings.providers ?? [],
+    allowAdd: true,
+    allowReorder: true,
+    allowDelete: true,
+}) }}
+
+
+<script>
+(function() {
+    const defaults = {
+        google: {
+            scopes: 'email, profile',
+            authUrl: 'https://accounts.google.com/o/oauth2/auth',
+            tokenUrl: 'https://oauth2.googleapis.com/token',
+            userInfoUrl: 'https://openidconnect.googleapis.com/v1/userinfo'
+        },
+        github: {
+            scopes: 'read:user, user:email',
+            authUrl: 'https://github.com/login/oauth/authorize',
+            tokenUrl: 'https://github.com/login/oauth/access_token',
+            userInfoUrl: 'https://api.github.com/user'
+        },
+        facebook: {
+            scopes: 'email',
+            authUrl: 'https://www.facebook.com/v11.0/dialog/oauth',
+            tokenUrl: 'https://graph.facebook.com/v11.0/oauth/access_token',
+            userInfoUrl: 'https://graph.facebook.com/me?fields=id,name,email'
+        },
+        instagram: {
+            scopes: 'user_profile',
+            authUrl: 'https://api.instagram.com/oauth/authorize',
+            tokenUrl: 'https://api.instagram.com/oauth/access_token',
+            userInfoUrl: 'https://graph.instagram.com/me?fields=id,username'
+        },
+        linkedin: {
+            scopes: 'r_liteprofile, r_emailaddress',
+            authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
+            tokenUrl: 'https://www.linkedin.com/oauth/v2/accessToken',
+            userInfoUrl: 'https://api.linkedin.com/v2/me'
+        }
+    };
+
+    const table = document.getElementById('settings-providers');
+    if (!table) return;
+
+    const tbody = table.querySelector('tbody');
+
+    function findField(row, fieldName) {
+        return row.querySelector(`textarea[name*="[${fieldName}]"], input[name*="[${fieldName}]"], select[name*="[${fieldName}]"]`);
+    }
+
+    function prefillDefaults(row, providerValue) {
+        const scopesField = findField(row, 'scopes');
+        const authUrlField = findField(row, 'authUrl');
+        const tokenUrlField = findField(row, 'tokenUrl');
+        const userInfoUrlField = findField(row, 'userInfoUrl');
+        const handleField = findField(row, 'handle');
+
+        // For known providers, prefill defaults
+        if (defaults[providerValue]) {
+            const config = defaults[providerValue];
+            if (scopesField) scopesField.value = config.scopes;
+            if (authUrlField) authUrlField.value = config.authUrl;
+            if (tokenUrlField) tokenUrlField.value = config.tokenUrl;
+            if (userInfoUrlField) userInfoUrlField.value = config.userInfoUrl;
+
+            if (handleField) {
+                handleField.readOnly = true;
+                handleField.value = providerValue;
+            }
+        } else if (providerValue === 'custom') {
+            // For custom, DO NOT clear existing values
+            if (handleField) {
+                handleField.readOnly = false;
+                // Keep current value; do not set to ''
+            }
+        }
+    }
+
+    // Prefill and lock handle when provider changes
+    tbody.addEventListener('change', function(event) {
+        const target = event.target;
+        if (target.name.includes('[provider]')) {
+            const row = target.closest('tr');
+            const providerValue = target.value;
+            prefillDefaults(row, providerValue);
+        }
+    });
+
+    // Handle newly added rows
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && node.matches('tr')) {
+                    const providerSelect = findField(node, 'provider');
+                    const providerValue = providerSelect ? providerSelect.value : '';
+                    prefillDefaults(node, providerValue);
+                }
+            });
+        });
+    });
+
+    observer.observe(tbody, { childList: true });
+
+    // Initialize existing rows on load
+    Array.from(tbody.rows).forEach(row => {
+        const providerSelect = findField(row, 'provider');
+        const providerValue = providerSelect ? providerSelect.value : '';
+        prefillDefaults(row, providerValue);
+    });
+})();
+</script>
