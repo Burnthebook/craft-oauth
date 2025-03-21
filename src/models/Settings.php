@@ -4,6 +4,8 @@ namespace burnthebook\craftoauth\models;
 
 use Craft;
 use craft\base\Model;
+use craft\helpers\ProjectConfig;
+use craft\base\ProjectConfigAwareInterface;
 
 /**
  * OAuth for Craft CMS settings

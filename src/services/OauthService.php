@@ -24,7 +24,7 @@ class OauthService extends Component
     */
     public function getProvider(string $providerHandle): ?AbstractProvider
     {
-        $settings = OAuth::getInstance()->getSettings();
+        $settings = OAuth::getInstance()->getEffectiveSettings();
         $providers = $settings->providers;
 
         foreach ($providers as $config) {

@@ -44,7 +44,15 @@ class OAuth extends Plugin
 
     public static function config(): array
     {
+        $configPath = Craft::getAlias('@config/oauth.php');
+        $config = [];
+    
+        if (file_exists($configPath)) {
+            $config = require $configPath;
+        }
+
         return [
+            'settings' => $config,
             'components' => [
                 'oauthService' => \burnthebook\craftoauth\services\OauthService::class,
             ],
@@ -73,8 +81,21 @@ class OAuth extends Plugin
     {
         return Craft::$app->view->renderTemplate('craft-oauth/_settings.twig', [
             'plugin' => $this,
-            'settings' => $this->getSettings(),
+            'settings' => $this->getEffectiveSettings(),
         ]);
+    }
+
+    public function getEffectiveSettings(): Settings
+    {
+        $configOverrides = Craft::$app->config->getConfigFromFile('oauth');
+    
+        if (!empty($configOverrides)) {
+            $settings = new Settings($configOverrides);
+        } else {
+            $settings = $this->getSettings();
+        }
+    
+        return $settings;
     }
 
     private function attachEventHandlers(): void

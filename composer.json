@@ -41,7 +41,10 @@
     "name": "OAuth for Craft CMS",
     "developer": "Burnthebook",
     "documentationUrl": "https://github.com/burnthebook/craft-oauth",
-    "class": "burnthebook\\craftoauth\\OAuth"
+    "class": "burnthebook\\craftoauth\\OAuth",
+    "copy-files": [
+        "src/config/oauth.php"
+    ]
   },
   "scripts": {
     "check-cs": "ecs check --ansi",

@@ -2,6 +2,39 @@
 
 <h2>OAuth Providers</h2>
 
+{% set configOverrides = craft.app.config.getConfigFromFile('oauth') %}
+{% if configOverrides.providers is defined %}
+    <p><em>Providers are managed via <code>config/oauth.php</code>. Delete <code>config/oauth.php</code> to manage providers in-admin.</em></p>
+    {% set tableData = configOverrides.providers %}
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>Provider</th>
+                <th>Handle</th>
+                <th>Client ID</th>
+                <th>Client Secret</th>
+                <th>Scopes</th>
+                <th>Auth URL</th>
+                <th>Token URL</th>
+                <th>User Info URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in tableData %}
+                <tr>
+                    <td>{{ row.provider ?? '—' }}</td>
+                    <td>{{ row.handle ?? '—' }}</td>
+                    <td><code>{{ row.clientId ?? '—' }}</code></td>
+                    <td><code>{{ row.clientSecret }}</code></td>
+                    <td>{{ row.scopes ?? '—' }}</td>
+                    <td>{{ row.authUrl ?? '—' }}</td>
+                    <td>{{ row.tokenUrl ?? '—' }}</td>
+                    <td>{{ row.userInfoUrl ?? '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
 {{ forms.editableTableField({
     label: 'Providers',
     name: 'providers',
@@ -141,3 +174,4 @@
     });
 })();
 </script>
+{% endif %}

@@ -56,7 +56,7 @@ class AuthController extends Controller
         }
 
         // Step 1: Get or create the user
-        $craftUser = $this->getOrCreateUser($email, $name);
+        $craftUser = $this->findOrCreateUser($email, $name);
 
         // Step 2: Assign to OAuth Users group
         $this->assignUserToGroup($craftUser, 'oauthUsers');
@@ -77,7 +77,7 @@ class AuthController extends Controller
      * @return User The retrieved or newly created user.
      * @throws \RuntimeException If the user cannot be created.
     */
-    protected function getOrCreateUser(string $email, ?string $name): User
+    protected function findOrCreateUser(string $email, ?string $name): User
     {
         $user = Craft::$app->users->getUserByUsernameOrEmail($email);
 
@@ -90,6 +90,8 @@ class AuthController extends Controller
         $user->email = $email;
         $user->firstName = $name ?? '';
         $user->newPassword = null;
+        $user->pending = false;
+        $user->active = true;
 
         if (!Craft::$app->elements->saveElement($user)) {
             throw new \RuntimeException('Failed to create user.');
