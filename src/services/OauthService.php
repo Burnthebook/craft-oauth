@@ -98,6 +98,8 @@ class OauthService extends Component
 
         foreach ($providers as $config) {
             if (($config['handle'] ?? '') === $providerHandle) {
+                $enablePkce = (bool) ($config['pkce'] ?? false);
+
                 if (!empty($config['scopes'])) {
                     $scopes = array_map('trim', explode(',', $config['scopes']));
                 } else {
@@ -129,9 +131,26 @@ class OauthService extends Component
         }
 
         if ($provider) {
-            $authUrl = $provider->getAuthorizationUrl([
-                'scope' => $scopes
-            ]);
+            if ($provider instanceof GenericProvider && $enablePkce) {
+                // Generate PKCE Code Verifier + Challenge
+                $codeVerifier = bin2hex(random_bytes(64));
+                $codeChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
+        
+                // Store code_verifier in session
+                Craft::$app->getSession()->set('pkceCodeVerifier', $codeVerifier);
+        
+                // Get auth URL with PKCE params
+                $authUrl = $provider->getAuthorizationUrl([
+                    'scope' => $scopes,
+                    'code_challenge' => $codeChallenge,
+                    'code_challenge_method' => 'S256',
+                ]);
+            } else {
+                // Standard League provider (no PKCE needed)
+                $authUrl = $provider->getAuthorizationUrl([
+                    'scope' => $scopes
+                ]);
+            }
 
             Craft::$app->getSession()->set('oauthState', $provider->getState());
 
@@ -154,6 +173,7 @@ class OauthService extends Component
         $session = Craft::$app->getSession();
 
         $provider = $this->getProvider($providerHandle);
+        
 
         if (!$provider) {
             throw new \Exception("Unknown provider: $providerHandle");
@@ -167,12 +187,21 @@ class OauthService extends Component
         }
 
         try {
-            $accessToken = $provider->getAccessToken('authorization_code', [
+            $tokenOptions = [
                 'code' => $request->getParam('code'),
-            ]);
-
+            ];
+    
+            // Add PKCE code_verifier if using GenericProvider
+            if ($provider instanceof GenericProvider) {
+                $codeVerifier = $session->get('pkceCodeVerifier');
+                if ($codeVerifier) {
+                    $tokenOptions['code_verifier'] = $codeVerifier;
+                }
+            }
+    
+            $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
             $user = $provider->getResourceOwner($accessToken);
-
+    
             return [
                 'token' => $accessToken,
                 'user' => $user,

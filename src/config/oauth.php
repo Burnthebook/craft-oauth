@@ -27,6 +27,7 @@ return [
                 'authUrl' => 'https://github.com/login/oauth/access_token', // The URL to redirect the user to for authorization.
                 'tokenUrl' => 'https://github.com/login/oauth/access_token', // The URL to exchange the authorization code for an access token.
                 'userInfoUrl' => 'https://api.github.com/user', // The URL to get the user information.
+                'pkce' => false, // Enable PKCE for the provider.
             ],
             [
                 'provider' => 'google',
@@ -37,6 +38,7 @@ return [
                 'authUrl' => 'https://accounts.google.com/o/oauth2/auth',
                 'tokenUrl' => 'https://oauth2.googleapis.com/token',
                 'userInfoUrl' => 'https://openidconnect.googleapis.com/v1/userinfo',
+                'pkce' => false,
             ],
             [
                 'provider' => 'facebook',
@@ -47,6 +49,7 @@ return [
                 'authUrl' => 'https://www.facebook.com/v11.0/dialog/oauth',
                 'tokenUrl' => 'https://graph.facebook.com/v11.0/oauth/access_token',
                 'userInfoUrl' => 'https://graph.facebook.com/me?fields=id,name,email',
+                'pkce' => false,
             ],
             [
                 'provider' => 'instagram',
@@ -57,6 +60,7 @@ return [
                 'authUrl' => 'https://api.instagram.com/oauth/authorize',
                 'tokenUrl' => 'https://api.instagram.com/oauth/access_token',
                 'userInfoUrl' => 'https://graph.instagram.com/me?fields=id,username',
+                'pkce' => false,
             ],
             [
                 'provider' => 'linkedin',
@@ -67,6 +71,7 @@ return [
                 'authUrl' => 'https://www.linkedin.com/oauth/v2/authorization',
                 'tokenUrl' => 'https://www.linkedin.com/oauth/v2/accessToken',
                 'userInfoUrl' => 'https://api.linkedin.com/v2/me',
+                'pkce' => false,
             ],
             [
                 'provider' => 'custom',
@@ -77,6 +82,7 @@ return [
                 'authUrl' => 'https://example.com/oauth/authorize',
                 'tokenUrl' => 'https://example.com/oauth/token',
                 'userInfoUrl' => 'https://example.com/api/userinfo',
+                'pkce' => true,
             ],
         ],
     ],

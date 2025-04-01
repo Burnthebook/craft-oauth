@@ -177,17 +177,17 @@ class OAuth extends Plugin
                         $provider = strtolower($row['provider']);
                         switch ($provider) {
                             case 'google':
-                                return '🌐 Google';
+                                return '<span class="status-label green"><span class="status green"></span><span class="status-label-text">Google</span></span>';
                             case 'github':
-                                return '🐙 GitHub';
+                                return '<span class="status-label sky"><span class="status sky"></span><span class="status-label-text">GitHub</span></span>';
                             case 'facebook':
-                                return '📘 Facebook';
+                                return '<span class="status-label blue"><span class="status blue"></span><span class="status-label-text">Facebook</span></span>';
                             case 'instagram':
-                                return '📸 Instagram';
+                                return '<span class="status-label red"><span class="status red"></span><span class="status-label-text">Instagram</span></span>';
                             case 'linkedin':
-                                return '🔗 LinkedIn';
+                                return '<span class="status-label violet"><span class="status violet"></span><span class="status-label-text">LinkedIn</span></span>';
                             default:
-                                return '✨ ' . ucfirst($provider);
+                                return '<span class="status-label black"><span class="status black"></span><span class="status-label-text">' . ucfirst($provider) . '</span></span>';
                         }
                     }, $providers);
         
