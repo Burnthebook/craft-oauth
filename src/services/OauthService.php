@@ -203,8 +203,13 @@ class OauthService extends Component
                 }
             }
     
+            Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
             $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
+            Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
+
+            Craft::info("Attempting to retrieve user information for provider: {$providerHandle}", 'oauth');
             $user = $provider->getResourceOwner($accessToken);
+            Craft::info("User information retrieved successfully for provider: {$providerHandle}. User: " . json_encode($user->toArray()), 'oauth');
 
             Craft::info("OAuth callback successful for provider: {$providerHandle}", 'oauth');
             return [
