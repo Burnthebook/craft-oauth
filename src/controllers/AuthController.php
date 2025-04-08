@@ -39,10 +39,14 @@ class AuthController extends Controller
     */
     public function actionCallback(string $provider): Response
     {
+        Craft::info("Handling OAuth callback for provider: {$provider}", 'oauth');
+
         $oauthService = OAuth::getInstance()->oauthService;
         $result = $oauthService->handleCallback($provider);
+        Craft::info("Raw OAuth callback response: " . print_r($result, true), 'oauth');
 
         if (!$result) {
+            Craft::error("OAuth login failed for provider: {$provider}", 'oauth');
             return $this->asJson(['error' => 'OAuth login failed']);
         }
 
@@ -51,21 +55,31 @@ class AuthController extends Controller
         $providerId = $oauthUser->getId();
         $name = $oauthUser->getName();
 
+        Craft::info("OAuth user details: email={$email}, providerId={$providerId}, name={$name}", 'oauth');
+
         if (!$email) {
+            Craft::error("No email returned from provider: {$provider}", 'oauth');
             return $this->asJson(['error' => 'No email returned from provider']);
         }
 
+        Craft::info("OAuth user data retrieved: email={$email}, providerId={$providerId}, name={$name}", 'oauth');
+
         // Step 1: Get or create the user
         $craftUser = $this->findOrCreateUser($email, $name);
+        Craft::info("User processed: ID={$craftUser->id}, email={$craftUser->email}", 'oauth');
 
         // Step 2: Assign to OAuth Users group
         $this->assignUserToGroup($craftUser, 'oauthUsers');
+        Craft::info("User assigned to group 'oauthUsers': ID={$craftUser->id}", 'oauth');
 
         // Step 3: Update oauthProviders field
         $this->updateOauthProvidersField($craftUser, $provider, $providerId);
+        Craft::info("OAuth providers field updated for user ID={$craftUser->id}, provider={$provider}, providerId={$providerId}", 'oauth');
 
         // Step 4: Log in and redirect
         Craft::$app->getUser()->login($craftUser);
+        Craft::info("User logged in: ID={$craftUser->id}", 'oauth');
+
         return $this->redirect(UrlHelper::siteUrl());
     }
 
@@ -82,6 +96,7 @@ class AuthController extends Controller
         $user = Craft::$app->users->getUserByUsernameOrEmail($email);
 
         if ($user) {
+            Craft::info("User found with email: {$email}", 'oauth');
             return $user;
         }
 
@@ -94,9 +109,11 @@ class AuthController extends Controller
         $user->active = true;
 
         if (!Craft::$app->elements->saveElement($user)) {
+            Craft::error("Failed to create user with email: {$email}", 'oauth');
             throw new \RuntimeException('Failed to create user.');
         }
-
+        
+        Craft::info("User created with email: {$email}", 'oauth');
         return $user;
     }
 

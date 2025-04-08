@@ -30,6 +30,7 @@ class OauthService extends Component
         foreach ($providers as $config) {
             // Match the row where the handle equals the requested providerHandle
             if (($config['handle'] ?? '') === $providerHandle) {
+                Craft::info("Retrieving provider: {$providerHandle}", 'oauth');
                 $providerType = strtolower($config['provider'] ?? 'custom');
                 $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
 
@@ -79,6 +80,7 @@ class OauthService extends Component
             }
         }
 
+        Craft::warning("Provider not found: {$providerHandle}", 'oauth');
         return null; // No matching handle found
     }
 
@@ -176,6 +178,7 @@ class OauthService extends Component
         
 
         if (!$provider) {
+            Craft::error("Unknown provider during callback: {$providerHandle}", 'oauth');
             throw new \Exception("Unknown provider: $providerHandle");
         }
 
@@ -183,6 +186,7 @@ class OauthService extends Component
         $receivedState = $request->getParam('state');
 
         if (!$receivedState || $receivedState !== $storedState) {
+            Craft::error('Invalid OAuth state during callback.', 'oauth');
             throw new \Exception('Invalid OAuth state.');
         }
 
@@ -201,14 +205,15 @@ class OauthService extends Component
     
             $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
             $user = $provider->getResourceOwner($accessToken);
-    
+
+            Craft::info("OAuth callback successful for provider: {$providerHandle}", 'oauth');
             return [
                 'token' => $accessToken,
                 'user' => $user,
             ];
 
         } catch (IdentityProviderException $e) {
-            Craft::error('OAuth callback failed: ' . $e->getMessage(), __METHOD__);
+            Craft::error('OAuth callback failed: ' . $e->getMessage(), 'oauth');
             return null;
         }
     }

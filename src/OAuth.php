@@ -63,6 +63,13 @@ class OAuth extends Plugin
     {
         parent::init();
 
+        // Add custom log target for oauth.log
+        Craft::getLogger()->dispatcher->targets[] = new \yii\log\FileTarget([
+            'logFile' => Craft::getAlias('@storage/logs/oauth.log'),
+            'categories' => ['oauth'],
+            'levels' => ['info', 'warning', 'error'],
+        ]);
+
         $this->attachEventHandlers();
 
         // Any code that creates an element query or loads Twig should be deferred until
