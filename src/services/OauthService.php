@@ -81,7 +81,7 @@ class OauthService extends Component
                         $stack->push(
                             Middleware::log(
                                 $logger,
-                                new MessageFormatter(MessageFormatter::DEBUG)
+                                new MessageFormatter("Request: {method} {uri} \nRequest Body: {req_body} \nResponse Code: {code} \nResponse Body: {res_body}")
                             )
                         );
                         return new GenericProvider([
