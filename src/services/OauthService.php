@@ -78,6 +78,9 @@ class OauthService extends Component
                             'urlAuthorize'            => $config['authUrl'],
                             'urlAccessToken'          => $config['tokenUrl'],
                             'urlResourceOwnerDetails' => $config['userInfoUrl'],
+                            'headers' => [
+                                'Accept' => 'application/json',
+                            ],
                         ]);
                 }
             }
@@ -269,7 +272,9 @@ class OauthService extends Component
             ];
 
         } catch (IdentityProviderException $e) {
+            $response = $e->getResponseBody();
             Craft::error('OAuth callback failed: ' . $e->getMessage(), 'oauth');
+            Craft::error('OAuth error response body: ' . json_encode($response), 'oauth');
             return null;
         }
     }
