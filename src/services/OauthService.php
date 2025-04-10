@@ -70,10 +70,7 @@ class OauthService extends Component
                         ]);
                     case 'custom':
                     default:
-                        // Temporarily enable HTTP response logging
-                        $httpClient = new \GuzzleHttp\Client([
-                            'debug' => fopen(Craft::getAlias('@storage/logs/oauth-http.log'), 'a'),
-                        ]);
+                        // Validate that custom URLs are present
                         return new GenericProvider([
                             'clientId'                => $config['clientId'],
                             'clientSecret'            => $config['clientSecret'],
@@ -81,10 +78,6 @@ class OauthService extends Component
                             'urlAuthorize'            => $config['authUrl'],
                             'urlAccessToken'          => $config['tokenUrl'],
                             'urlResourceOwnerDetails' => $config['userInfoUrl'],
-                            'headers' => [
-                                'Accept' => 'application/json',
-                            ],
-                            'httpClient' => $httpClient,
                         ]);
                 }
             }
@@ -219,7 +212,6 @@ class OauthService extends Component
         try {
             $tokenOptions = [
                 'code' => $request->getParam('code'),
-                'grant_type' => 'authorization_code',
             ];
     
             // Add PKCE code_verifier if using GenericProvider
@@ -243,30 +235,15 @@ class OauthService extends Component
             
             $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
             
-            $tokenOptions['client_id'] = $config['clientId'];
-            $tokenOptions['redirect_uri'] = $redirectUri;
-            
             Craft::info("OAuth token request options: " . json_encode($tokenOptions), 'oauth');
             Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
             Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');
             Craft::info("OAuth provider token URL: " . $config['tokenUrl'], 'oauth');
 
-            try {
-                Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
-                $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
-                Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
-            } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
-                Craft::error('OAuth callback failed (IdentityProviderException): ' . $e->getMessage(), 'oauth');
-                Craft::error('OAuth error response body: ' . json_encode($e->getResponseBody()), 'oauth');
-                return null;
-            } catch (\UnexpectedValueException $e) {
-                Craft::error('OAuth callback failed (UnexpectedValueException): ' . $e->getMessage(), 'oauth');
-                return null;
-            } catch (\Throwable $e) {
-                Craft::error('OAuth callback failed (Throwable): ' . $e->getMessage(), 'oauth');
-                return null;
-            }
-            
+            Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
+            $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
+            Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
+
             if (empty($config['userInfoUrl'])) {
                 // No userInfoUrl, use token response for user data
                 $userData = $accessToken->getValues();
@@ -291,10 +268,9 @@ class OauthService extends Component
                 'user' => $user,
             ];
 
-        } catch (IdentityProviderException $e) {
-            $response = $e->getResponseBody();
+        } catch (\Exception $e) {
+            dd($e);
             Craft::error('OAuth callback failed: ' . $e->getMessage(), 'oauth');
-            Craft::error('OAuth error response body: ' . json_encode($response), 'oauth');
             return null;
         }
     }
