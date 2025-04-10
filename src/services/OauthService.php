@@ -146,7 +146,15 @@ class OauthService extends Component
                     'scope' => $scopes,
                     'code_challenge' => $codeChallenge,
                     'code_challenge_method' => 'S256',
+                    'approval_prompt' => '', // approval_prompt is a google specific oauth param that league/oauth-client injects. We do not need it for GenericProvider
                 ]);
+
+                // Clean up URL: remove empty approval_prompt param
+                $authUrl = preg_replace('/([&?])approval_prompt=&?/', '$1', $authUrl);
+
+                // Also clean up any trailing ? or &
+                $authUrl = rtrim($authUrl, '&?');
+
             } else {
                 // Standard League provider (no PKCE needed)
                 $authUrl = $provider->getAuthorizationUrl([
@@ -154,7 +162,15 @@ class OauthService extends Component
                 ]);
             }
 
+            Craft::info("Authorization params: " . json_encode([
+                'scope' => $scopes,
+                'code_challenge' => $codeChallenge ?? null,
+                'code_challenge_method' => 'S256',
+            ]), 'oauth');
+
             Craft::$app->getSession()->set('oauthState', $provider->getState());
+            
+            Craft::info('Final redirect URL: ' . $authUrl, 'oauth');
 
             return $authUrl;
         }
@@ -207,12 +223,38 @@ class OauthService extends Component
             $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
             Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
 
+            // Check if provider config has a userInfoUrl
+            $settings = OAuth::getInstance()->getEffectiveSettings();
+            $providers = $settings->providers;
+            $config = null;
+
+            foreach ($providers as $providerConfig) {
+                if (($providerConfig['handle'] ?? '') === $providerHandle) {
+                    $config = $providerConfig;
+                    break;
+                }
+            }
+
+            if (empty($config['userInfoUrl'])) {
+                // No userInfoUrl, use token response for user data
+                $userData = $accessToken->getValues();
+                Craft::info("User information extracted from token for provider: {$providerHandle}. User: " . json_encode($userData), 'oauth');
+
+                return [
+                    'provider' => $providerHandle,
+                    'token' => $accessToken,
+                    'user' => $userData,
+                ];
+            }
+
+            // Default flow
             Craft::info("Attempting to retrieve user information for provider: {$providerHandle}", 'oauth');
             $user = $provider->getResourceOwner($accessToken);
             Craft::info("User information retrieved successfully for provider: {$providerHandle}. User: " . json_encode($user->toArray()), 'oauth');
 
             Craft::info("OAuth callback successful for provider: {$providerHandle}", 'oauth');
             return [
+                'provider' => $providerHandle,
                 'token' => $accessToken,
                 'user' => $user,
             ];
