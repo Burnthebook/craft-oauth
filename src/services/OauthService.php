@@ -3,7 +3,12 @@
 namespace burnthebook\craftoauth\services;
 
 use Craft;
+use GuzzleHttp\Client;
 use yii\base\Component;
+use GuzzleHttp\Middleware;
+use Psr\Log\LoggerInterface;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\MessageFormatter;
 use burnthebook\craftoauth\OAuth;
 use League\OAuth2\Client\Provider\Github;
 use League\OAuth2\Client\Provider\Google;
@@ -13,6 +18,7 @@ use League\OAuth2\Client\Provider\Instagram;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+use Yii;
 
 class OauthService extends Component
 {
@@ -70,7 +76,14 @@ class OauthService extends Component
                         ]);
                     case 'custom':
                     default:
-                        // Validate that custom URLs are present
+                        $logger = \Craft::$container->get(LoggerInterface::class);
+                        $stack = HandlerStack::create();
+                        $stack->push(
+                            Middleware::log(
+                                $logger,
+                                new MessageFormatter(MessageFormatter::DEBUG)
+                            )
+                        );
                         return new GenericProvider([
                             'clientId'                => $config['clientId'],
                             'clientSecret'            => $config['clientSecret'],
@@ -81,6 +94,7 @@ class OauthService extends Component
                             'headers' => [
                                 'Accept' => 'application/json',
                             ],
+                            'httpClient' => new Client(['handler' => $stack]),
                         ]);
                 }
             }
@@ -243,10 +257,22 @@ class OauthService extends Component
             Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');
             Craft::info("OAuth provider token URL: " . $config['tokenUrl'], 'oauth');
 
-            Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
-            $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
-            Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
-
+            try {
+                Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
+                $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
+                Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
+            } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
+                Craft::error('OAuth callback failed (IdentityProviderException): ' . $e->getMessage(), 'oauth');
+                Craft::error('OAuth error response body: ' . json_encode($e->getResponseBody()), 'oauth');
+                return null;
+            } catch (\UnexpectedValueException $e) {
+                Craft::error('OAuth callback failed (UnexpectedValueException): ' . $e->getMessage(), 'oauth');
+                return null;
+            } catch (\Throwable $e) {
+                Craft::error('OAuth callback failed (Throwable): ' . $e->getMessage(), 'oauth');
+                return null;
+            }
+            
             if (empty($config['userInfoUrl'])) {
                 // No userInfoUrl, use token response for user data
                 $userData = $accessToken->getValues();
