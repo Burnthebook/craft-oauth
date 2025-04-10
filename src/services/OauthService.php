@@ -33,7 +33,10 @@ class OauthService extends Component
                 Craft::info("Retrieving provider: {$providerHandle}", 'oauth');
                 $providerType = strtolower($config['provider'] ?? 'custom');
                 $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
-
+                
+                Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
+                Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');
+                
                 switch ($providerType) {
                     case 'google':
                         return new Google([
@@ -219,21 +222,27 @@ class OauthService extends Component
                 }
             }
     
-            Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
-            $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
-            Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
-
-            // Check if provider config has a userInfoUrl
             $settings = OAuth::getInstance()->getEffectiveSettings();
             $providers = $settings->providers;
             $config = null;
-
+            
             foreach ($providers as $providerConfig) {
                 if (($providerConfig['handle'] ?? '') === $providerHandle) {
                     $config = $providerConfig;
                     break;
                 }
             }
+            
+            $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
+            
+            Craft::info("OAuth token request options: " . json_encode($tokenOptions), 'oauth');
+            Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
+            Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');
+            Craft::info("OAuth provider token URL: " . $config['tokenUrl'], 'oauth');
+
+            Craft::info("Attempting to retrieve access token for provider: {$providerHandle}", 'oauth');
+            $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
+            Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
 
             if (empty($config['userInfoUrl'])) {
                 // No userInfoUrl, use token response for user data
