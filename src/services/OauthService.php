@@ -5,6 +5,7 @@ namespace burnthebook\craftoauth\services;
 use Craft;
 use GuzzleHttp\Client;
 use yii\base\Component;
+use craft\helpers\Logger;
 use GuzzleHttp\Middleware;
 use Psr\Log\LoggerInterface;
 use GuzzleHttp\HandlerStack;
@@ -76,7 +77,7 @@ class OauthService extends Component
                         ]);
                     case 'custom':
                     default:
-                        $logger = \Craft::$container->get(LoggerInterface::class);
+                        $logger = Craft::$app->get(LoggerInterface::class);
                         $stack = HandlerStack::create();
                         $stack->push(
                             Middleware::log(
