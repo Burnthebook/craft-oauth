@@ -3,13 +3,7 @@
 namespace burnthebook\craftoauth\services;
 
 use Craft;
-use GuzzleHttp\Client;
 use yii\base\Component;
-use craft\helpers\Logger;
-use GuzzleHttp\Middleware;
-use Psr\Log\LoggerInterface;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\MessageFormatter;
 use burnthebook\craftoauth\OAuth;
 use League\OAuth2\Client\Provider\Github;
 use League\OAuth2\Client\Provider\Google;
@@ -19,7 +13,6 @@ use League\OAuth2\Client\Provider\Instagram;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
-use Yii;
 
 class OauthService extends Component
 {
@@ -77,14 +70,10 @@ class OauthService extends Component
                         ]);
                     case 'custom':
                     default:
-                        $logger = Craft::$app->get(LoggerInterface::class);
-                        $stack = HandlerStack::create();
-                        $stack->push(
-                            Middleware::log(
-                                $logger,
-                                new MessageFormatter("Request: {method} {uri} \nRequest Body: {req_body} \nResponse Code: {code} \nResponse Body: {res_body}")
-                            )
-                        );
+                        // Temporarily enable HTTP response logging
+                        $httpClient = new \GuzzleHttp\Client([
+                            'debug' => fopen(Craft::getAlias('@storage/logs/oauth-http.log'), 'a'),
+                        ]);
                         return new GenericProvider([
                             'clientId'                => $config['clientId'],
                             'clientSecret'            => $config['clientSecret'],
@@ -95,7 +84,7 @@ class OauthService extends Component
                             'headers' => [
                                 'Accept' => 'application/json',
                             ],
-                            'httpClient' => new Client(['handler' => $stack]),
+                            'httpClient' => $httpClient,
                         ]);
                 }
             }
