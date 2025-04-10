@@ -219,6 +219,7 @@ class OauthService extends Component
         try {
             $tokenOptions = [
                 'code' => $request->getParam('code'),
+                'grant_type' => 'authorization_code',
             ];
     
             // Add PKCE code_verifier if using GenericProvider
@@ -241,6 +242,9 @@ class OauthService extends Component
             }
             
             $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
+            
+            $tokenOptions['client_id'] = $config['clientId'];
+            $tokenOptions['redirect_uri'] = $redirectUri;
             
             Craft::info("OAuth token request options: " . json_encode($tokenOptions), 'oauth');
             Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
