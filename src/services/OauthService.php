@@ -28,6 +28,7 @@ class OauthService extends Component
         $providers = $settings->providers;
 
         foreach ($providers as $config) {
+            Craft::info('OauthService: Provider config: ' . json_encode($config), 'oauth');
             // Match the row where the handle equals the requested providerHandle
             if (($config['handle'] ?? '') === $providerHandle) {
                 Craft::info("Retrieving provider: {$providerHandle}", 'oauth');
@@ -40,7 +41,8 @@ class OauthService extends Component
                 if (!empty($config['providerClass']) && class_exists($config['providerClass'])) {
 
                     $providerClass = $config['providerClass'];
-
+                    Craft::info('OauthService: Instantiating custom provider class ' . $providerClass, 'oauth');
+                    
                     if (!is_subclass_of($providerClass, \League\OAuth2\Client\Provider\AbstractProvider::class)) {
                         throw new \Exception("Invalid provider class: {$providerClass} must extend AbstractProvider");
                     }
@@ -205,7 +207,7 @@ class OauthService extends Component
      * Handles the callback for an OAuth provider.
      *
      * @param string $providerHandle The handle of the provider to handle the callback for.
-     * @return array|null An array containing the access token and user information, or null if the callback fails.
+     * @return array{provider: string, token: AccessToken, user: ResourceOwnerInterface}|null
      * @throws \Exception If the provider is unknown or if the OAuth state is invalid.
     */
     public function handleCallback(string $providerHandle): ?array
@@ -264,21 +266,14 @@ class OauthService extends Component
             $accessToken = $provider->getAccessToken('authorization_code', $tokenOptions);
             Craft::info("Access token retrieved successfully for provider: {$providerHandle}. Token: " . json_encode($accessToken), 'oauth');
 
-            if (empty($config['userInfoUrl'])) {
-                // No userInfoUrl, use token response for user data
-                $userData = $accessToken->getValues();
-                Craft::info("User information extracted from token for provider: {$providerHandle}. User: " . json_encode($userData), 'oauth');
-
-                return [
-                    'provider' => $providerHandle,
-                    'token' => $accessToken,
-                    'user' => $userData,
-                ];
-            }
-
-            // Default flow
             Craft::info("Attempting to retrieve user information for provider: {$providerHandle}", 'oauth');
             $user = $provider->getResourceOwner($accessToken);
+            
+            if (!$user instanceof \League\OAuth2\Client\Provider\ResourceOwnerInterface) {
+                Craft::error("Provider [$providerHandle] returned invalid user object: " . print_r($user, true), 'oauth');
+                throw new \Exception("Invalid user object returned from provider [$providerHandle]");
+            }
+
             Craft::info("User information retrieved successfully for provider: {$providerHandle}. User: " . json_encode($user->toArray()), 'oauth');
 
             Craft::info("OAuth callback successful for provider: {$providerHandle}", 'oauth');
