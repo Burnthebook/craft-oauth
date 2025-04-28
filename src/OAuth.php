@@ -20,13 +20,9 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\fieldlayoutelements\CustomField;
 use burnthebook\craftoauth\models\Settings;
 use craft\events\RegisterElementTableAttributesEvent;
-
-
 use craft\elements\Entry;
 use craft\events\DefineAttributeHtmlEvent;
 use craft\events\PrepareElementQueryForTableAttributeEvent;
-
-
 
 /**
  * OAuth for Craft CMS plugin
@@ -46,7 +42,7 @@ class OAuth extends Plugin
     {
         $configPath = Craft::getAlias('@config/oauth.php');
         $config = [];
-    
+
         if (file_exists($configPath)) {
             $config = require $configPath;
         }
@@ -95,13 +91,13 @@ class OAuth extends Plugin
     public function getEffectiveSettings(): Settings
     {
         $configOverrides = Craft::$app->config->getConfigFromFile('oauth');
-    
+
         if (!empty($configOverrides)) {
             $settings = new Settings($configOverrides);
         } else {
             $settings = $this->getSettings();
         }
-    
+
         return $settings;
     }
 
@@ -151,15 +147,15 @@ class OAuth extends Plugin
 
     /**
      * Register CP table attributes
-     * 
+     *
      * @return void
      */
-    protected function registerCpTableAttributes() : void
+    protected function registerCpTableAttributes(): void
     {
         Event::on(
             User::class,
             User::EVENT_REGISTER_TABLE_ATTRIBUTES,
-            function(RegisterElementTableAttributesEvent $event) {
+            function (RegisterElementTableAttributesEvent $event) {
                 $event->tableAttributes['oauthProviders'] = [
                     'label' => 'OAuth Providers',
                     'sortable' => true,
@@ -174,13 +170,13 @@ class OAuth extends Plugin
                 if ($event->attribute === 'oauthProviders') {
                     $user = $event->sender;
                     $providers = $user->getFieldValue('oauthProviders') ?? [];
-        
+
                     if (empty($providers)) {
                         $event->html = '<span style="color:#999;">—</span>';
                         return;
                     }
-        
-                    $icons = array_map(function($row) {
+
+                    $icons = array_map(function ($row) {
                         $provider = strtolower($row['provider']);
                         switch ($provider) {
                             case 'google':
@@ -197,7 +193,7 @@ class OAuth extends Plugin
                                 return '<span class="status-label black"><span class="status black"></span><span class="status-label-text">' . ucfirst($provider) . '</span></span>';
                         }
                     }, $providers);
-        
+
                     $event->html = implode('<br>', $icons);
                 }
             }

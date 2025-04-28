@@ -75,6 +75,7 @@ return [
             ],
             [
                 'provider' => 'custom',
+                'providerClass' => '\\custom\\oauth\\providers\\CustomProvider', // Custom provider class
                 'clientId' => App::env('CUSTOM_ID'),
                 'clientSecret' => App::env('CUSTOM_SECRET'),
                 'handle' => 'custom',

@@ -33,10 +33,30 @@ class OauthService extends Component
                 Craft::info("Retrieving provider: {$providerHandle}", 'oauth');
                 $providerType = strtolower($config['provider'] ?? 'custom');
                 $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
-                
+
                 Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
                 Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');
-                
+
+                if (!empty($config['providerClass']) && class_exists($config['providerClass'])) {
+
+                    $providerClass = $config['providerClass'];
+
+                    if (!is_subclass_of($providerClass, \League\OAuth2\Client\Provider\AbstractProvider::class)) {
+                        throw new \Exception("Invalid provider class: {$providerClass} must extend AbstractProvider");
+                    }
+
+                    Craft::info("Using custom provider class: {$config['providerClass']}", 'oauth');
+
+                    return new $providerClass([
+                        'clientId' => $config['clientId'],
+                        'clientSecret' => $config['clientSecret'],
+                        'redirectUri' => $redirectUri,
+                        'urlAuthorize' => $config['authUrl'],
+                        'urlAccessToken' => $config['tokenUrl'],
+                        'urlResourceOwnerDetails' => $config['userInfoUrl'] ?? '',
+                    ]);
+                }
+
                 switch ($providerType) {
                     case 'google':
                         return new Google([
@@ -140,10 +160,10 @@ class OauthService extends Component
                 // Generate PKCE Code Verifier + Challenge
                 $codeVerifier = bin2hex(random_bytes(64));
                 $codeChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-        
+
                 // Store code_verifier in session
                 Craft::$app->getSession()->set('pkceCodeVerifier', $codeVerifier);
-        
+
                 // Get auth URL with PKCE params
                 $authUrl = $provider->getAuthorizationUrl([
                     'scope' => $scopes,
@@ -172,7 +192,7 @@ class OauthService extends Component
             ]), 'oauth');
 
             Craft::$app->getSession()->set('oauthState', $provider->getState());
-            
+
             Craft::info('Final redirect URL: ' . $authUrl, 'oauth');
 
             return $authUrl;
@@ -194,7 +214,7 @@ class OauthService extends Component
         $session = Craft::$app->getSession();
 
         $provider = $this->getProvider($providerHandle);
-        
+
 
         if (!$provider) {
             Craft::error("Unknown provider during callback: {$providerHandle}", 'oauth');
@@ -213,7 +233,7 @@ class OauthService extends Component
             $tokenOptions = [
                 'code' => $request->getParam('code'),
             ];
-    
+
             // Add PKCE code_verifier if using GenericProvider
             if ($provider instanceof GenericProvider) {
                 $codeVerifier = $session->get('pkceCodeVerifier');
@@ -221,20 +241,20 @@ class OauthService extends Component
                     $tokenOptions['code_verifier'] = $codeVerifier;
                 }
             }
-    
+
             $settings = OAuth::getInstance()->getEffectiveSettings();
             $providers = $settings->providers;
             $config = null;
-            
+
             foreach ($providers as $providerConfig) {
                 if (($providerConfig['handle'] ?? '') === $providerHandle) {
                     $config = $providerConfig;
                     break;
                 }
             }
-            
+
             $redirectUri = Craft::$app->getSites()->getCurrentSite()->getBaseUrl() . 'oauth/callback/' . $providerHandle;
-            
+
             Craft::info("OAuth token request options: " . json_encode($tokenOptions), 'oauth');
             Craft::info("OAuth provider clientId: " . $config['clientId'], 'oauth');
             Craft::info("OAuth provider redirectUri: " . $redirectUri, 'oauth');

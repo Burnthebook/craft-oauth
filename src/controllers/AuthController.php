@@ -112,7 +112,7 @@ class AuthController extends Controller
             Craft::error("Failed to create user with email: {$email}", 'oauth');
             throw new \RuntimeException('Failed to create user.');
         }
-        
+
         Craft::info("User created with email: {$email}", 'oauth');
         return $user;
     }
