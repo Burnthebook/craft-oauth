@@ -57,12 +57,7 @@ When connecting a provider, the plugin will handle:
 - Receiving and verifying the callback
 - Fetching user profile information
 
-After successful login, a user’s connected OAuth accounts will appear in the Craft Control Panel under:
-
-Admin → Users → {User} → OAuth Accounts
-
-as a table showing the linked providers and account IDs.
-
+After successful login, a user’s connected OAuth accounts will appear in the Craft Control Panel under: **Admin → Users → {User} → OAuth Accounts** as a table showing the linked providers and account IDs.
 
 ## Adding a Custom Provider
 
